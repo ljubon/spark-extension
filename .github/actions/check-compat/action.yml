@@ -66,6 +66,10 @@ runs:
       japi-compliance-checker ~/.m2/repository/uk/co/gresearch/spark/spark-extension_${{ inputs.scala-compat-version }}/${{ inputs.package-version }}-${{ inputs.spark-compat-version }}/spark-extension_${{ inputs.scala-compat-version }}-${{ inputs.package-version }}-${{ inputs.spark-compat-version }}.jar target/spark-extension*.jar
     shell: bash
 
+  - name: Lint
+    run: mvn checkstyle:check
+    shell: bash
+
   - name: Upload Report
     uses: actions/upload-artifact@v3
     if: always()

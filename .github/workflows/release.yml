@@ -12,7 +12,7 @@ permissions:
 jobs:
   release:
     if: |
-      startsWith(github.event.workflow_run.head_branch, 'spark-extension-') &&
+      startsWith(github.event.workflow_run.head_branch, 'v') &&
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 

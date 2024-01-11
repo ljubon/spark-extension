@@ -1,6 +1,24 @@
 name: Release
 
 on:
+  workflow_dispatch:
+    inputs:
+      sparkVersion:
+        type: number
+        description: Spark version
+        required: false
+      scalaVersion:
+        type: number
+        description: Spark version
+        required: false
+      scriptName:
+        type: choice
+        description: Script name
+        required: false
+        options:
+          - set-version.sh
+          - test-release.sh
+          - release.sh
   workflow_run:
     branches: "v*"
     workflows: ["CI"]
@@ -12,15 +30,15 @@ permissions:
 
 jobs:
   release:
-    if: |
-      github.event.workflow_run.event == 'push' &&
-      github.event.workflow_run.conclusion == 'success' &&
-      github.repository_owner == 'G-Research'
+    # if: |
+    #   github.event.workflow_run.event == 'push' &&
+    #   github.event.workflow_run.conclusion == 'success' &&
+    #   github.repository_owner == 'G-Research'
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 

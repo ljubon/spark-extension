@@ -60,14 +60,14 @@ rm -rf metastore_db/ spark-warehouse/
 ./set-version.sh 3.1.3 2.12.10; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
 ./set-version.sh 3.2.4 2.12.15; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
 ./set-version.sh 3.3.4 2.12.15; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
-./set-version.sh 3.4.2 2.12.17; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
-./set-version.sh 3.5.0 2.12.18; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
+./set-version.sh 3.4.3 2.12.17; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
+./set-version.sh 3.5.1 2.12.18; mvn clean deploy -Dsign; ./build-whl.sh; ./test-release.sh
 rm -rf python/dist
 
 ./set-version.sh 3.2.4 2.13.5; mvn clean deploy -Dsign; ./test-release.sh
 ./set-version.sh 3.3.4 2.13.8; mvn clean deploy -Dsign; ./test-release.sh
-./set-version.sh 3.4.2 2.13.8; mvn clean deploy -Dsign; ./test-release.sh
-./set-version.sh 3.5.0 2.13.8; mvn clean deploy -Dsign; ./test-release.sh
+./set-version.sh 3.4.3 2.13.8; mvn clean deploy -Dsign; ./test-release.sh
+./set-version.sh 3.5.1 2.13.8; mvn clean deploy -Dsign; ./test-release.sh
 rm -rf metastore_db/ spark-warehouse/
 
 # all SNAPSHOT versions build, test and complete the example, releasing
@@ -83,13 +83,13 @@ echo "Releasing ${#changes[@]} changes as version $version:"
 for (( i=0; i<${#changes[@]}; i++ )); do echo "${changes[$i]}" ; done
 
 sed -i "s/## \[UNRELEASED\] - YYYY-MM-DD/## [$version] - $(date +%Y-%m-%d)/" CHANGELOG.md
-sed -i -e "s/$latest-/$version-/g" -e "s/$latest\./$version./g" README.md PYSPARK-DEPS.md python/README.md
+sed -i -e "s/$latest-/$version-/g" -e "s/$latest\./$version./g" -e "s/v$latest/v$version/g" README.md PYSPARK-DEPS.md python/README.md
 ./set-version.sh $version
 
 # commit changes to local repo
 echo
 echo "Committing release to local git"
-git add pom.xml python/setup.py CHANGELOG.md README.md python/README.md
+git add pom.xml python/setup.py CHANGELOG.md README.md PYSPARK-DEPS.md python/README.md
 git commit -m "Releasing $version"
 git tag -a "v${version}" -m "Release v${version}"
 
@@ -109,13 +109,13 @@ mkdir -p python/pyspark/jars/
 ./set-version.sh 3.1.3 2.12.10; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
 ./set-version.sh 3.2.4 2.12.15; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
 ./set-version.sh 3.3.4 2.12.15; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
-./set-version.sh 3.4.2 2.12.17; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
-./set-version.sh 3.5.0 2.12.18; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
+./set-version.sh 3.4.3 2.12.17; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
+./set-version.sh 3.5.1 2.12.18; mvn clean deploy -Dsign; mvn nexus-staging:release; ./build-whl.sh
 
 ./set-version.sh 3.2.4 2.13.5; mvn clean deploy -Dsign; mvn nexus-staging:release
 ./set-version.sh 3.3.4 2.13.8; mvn clean deploy -Dsign; mvn nexus-staging:release
-./set-version.sh 3.4.2 2.13.8; mvn clean deploy -Dsign; mvn nexus-staging:release
-./set-version.sh 3.5.0 2.13.8; mvn clean deploy -Dsign; mvn nexus-staging:release
+./set-version.sh 3.4.3 2.13.8; mvn clean deploy -Dsign; mvn nexus-staging:release
+./set-version.sh 3.5.1 2.13.8; mvn clean deploy -Dsign; mvn nexus-staging:release
 
 # upload to test PyPi
 pip install twine

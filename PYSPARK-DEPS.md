@@ -27,12 +27,12 @@ Above example installs PIP packages `pandas` and `pyarrow` via `pip`. Method `in
 spark.install_pip_package("pandas==1.4.3", "pyarrow~=8.0.0")
 
 # install packages from package sources (e.g. git clone https://github.com/pandas-dev/pandas.git)
-spark.install_pip_package("../pandas/")
+spark.install_pip_package("./pandas/")
 
 # install packages from git repo
 spark.install_pip_package("git+https://github.com/pandas-dev/pandas.git@main")
 
-# use a pip cache directory to cache downloaded whl files
+# use a pip cache directory to cache downloaded and built whl files
 spark.install_pip_package("pandas", "pyarrow", "--cache-dir", "/home/user/.cache/pip")
 
 # use an alternative index url (other than https://pypi.org/simple)
@@ -76,9 +76,9 @@ docker compose -f docker-compose.yml up -d
 
 Run the `example.py` Spark application on the example cluster:
 ```shell
-docker exec spark-master spark-submit --master spark://master:7077 --packages uk.co.gresearch.spark:spark-extension_2.12:2.11.0-3.5 /example/example.py
+docker exec spark-master spark-submit --master spark://master:7077 --packages uk.co.gresearch.spark:spark-extension_2.12:2.12.0-3.5 /example/example.py
 ```
-The `--packages uk.co.gresearch.spark:spark-extension_2.12:2.11.0-3.5` argument
+The `--packages uk.co.gresearch.spark:spark-extension_2.12:2.12.0-3.5` argument
 tells `spark-submit` to add the `spark-extension` Maven package to the Spark job.
 
 Alternatively, install the `pyspark-extension` PyPi package via `pip install` and remove the `--packages` argument from `spark-submit`:

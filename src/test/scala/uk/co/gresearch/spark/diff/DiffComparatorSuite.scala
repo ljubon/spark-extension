@@ -33,6 +33,7 @@ import uk.co.gresearch.spark.diff.comparator._
 
 import java.sql.{Date, Timestamp}
 import java.time.Duration
+import java.util
 
 case class Numbers(
     id: Int,
@@ -412,28 +413,68 @@ class DiffComparatorSuite extends AnyFunSuite with SparkTestSession {
         DiffOptions.default.withComparator(DiffComparators.duration(Duration.ofSeconds(61)).asExclusive(), "time")
       doTest(optionsWithTightComparator, optionsWithRelaxedComparator, leftTimes.toDF, rightTimes.toDF)
     }
+
+    test("changeset accounts for comparators") {
+      val changesetOptions = DiffOptions.default
+        .withComparator(DiffComparators.epsilon(10).asAbsolute().asInclusive(), "longValue")
+        .withChangeColumn("changeset")
+
+      lazy val left: Dataset[Numbers] = Seq(
+        Numbers(1, 1L, 1.0f, 1.0, Decimal(10, 8, 3), None, None),
+        Numbers(2, 2L, 2.0f, 2.0, Decimal(20, 8, 3), Some(2), Some(2L)),
+        Numbers(3, 3L, 3.0f, 3.0, Decimal(30, 8, 3), Some(3), Some(3L)),
+        Numbers(4, 4L, 4.0f, 4.0, Decimal(40, 8, 3), Some(4), None),
+        Numbers(5, 5L, 5.0f, 5.0, Decimal(50, 8, 3), None, Some(5L)),
+      ).toDS()
+
+      lazy val right: Dataset[Numbers] = Seq(
+        Numbers(1, 1L, 1.0f, 1.0, Decimal(10, 8, 3), None, None),
+        Numbers(2, 8L, 2.0f, 2.0, Decimal(20, 8, 3), Some(2), Some(2L)),
+        Numbers(3, 9L, 6.0f, 3.0, Decimal(30, 8, 3), Some(3), Some(3L)),
+        Numbers(4, 10L, 4.0f, 4.0, Decimal(40, 8, 3), Some(4), None),
+        Numbers(5, 11L, 5.0f, 5.0, Decimal(50, 8, 3), None, Some(5L)),
+      ).toDS()
+
+      val rs = left.diff(right, changesetOptions, "id").where($"diff" === "C")
+      assert(rs.count() == 1, "Only one row should differ with the numeric comparator applied")
+      val changesInDifferingRow: util.List[String] = rs.head.getList[String](1)
+      assert(
+        changesInDifferingRow.get(0) == "floatValue",
+        "Only floatVal differs after considering the comparators so the changeset should be size 1"
+      )
+    }
   }
 
   Seq(true, false).foreach { sensitive =>
-    Seq("true", "false").foreach { codegen =>
-      test(s"map comparator - keyOrderSensitive=$sensitive - codegen enabled=$codegen") {
-        withSQLConf(
-          SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key -> codegen,
-          SQLConf.CODEGEN_FALLBACK.key -> "false"
-        ) {
-          val options = DiffOptions.default.withComparator(DiffComparators.map[Int, Long](sensitive), "map")
+    Seq(true, false).foreach { codegen =>
+      Seq(true, false).foreach { typed =>
+        val typedLabel = if (typed) "typed" else "untyped"
 
-          val actual = leftMaps.diff(rightMaps, options, "id").orderBy($"id").collect()
-          val diffs = Seq((1, "N"), (2, "C"), (3, "C"), (4, "D"), (5, "I"), (6, if (sensitive) "C" else "N"), (7, "C"))
-            .toDF("id", "diff")
-          val expected = leftMaps
-            .withColumnRenamed("map", "left_map")
-            .join(rightMaps.withColumnRenamed("map", "right_map"), Seq("id"), "fullouter")
-            .join(diffs, "id")
-            .select($"diff", $"id", $"left_map", $"right_map")
-            .orderBy($"id")
-            .collect()
-          assert(actual === expected)
+        test(s"map comparator $typedLabel - keyOrderSensitive=$sensitive - codegen enabled=$codegen") {
+          withSQLConf(
+            SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key -> codegen.toString,
+            SQLConf.CODEGEN_FALLBACK.key -> "false"
+          ) {
+            val options =
+              if (typed) {
+                DiffOptions.default.withComparator(DiffComparators.map[Int, Long](sensitive), "map")
+              } else {
+                DiffOptions.default.withComparator(DiffComparators.map(IntegerType, LongType, sensitive), "map")
+              }
+
+            val actual = leftMaps.diff(rightMaps, options, "id").orderBy($"id").collect()
+            val diffs =
+              Seq((1, "N"), (2, "C"), (3, "C"), (4, "D"), (5, "I"), (6, if (sensitive) "C" else "N"), (7, "C"))
+                .toDF("id", "diff")
+            val expected = leftMaps
+              .withColumnRenamed("map", "left_map")
+              .join(rightMaps.withColumnRenamed("map", "right_map"), Seq("id"), "fullouter")
+              .join(diffs, "id")
+              .select($"diff", $"id", $"left_map", $"right_map")
+              .orderBy($"id")
+              .collect()
+            assert(actual === expected)
+          }
         }
       }
     }
